@@ -1,11 +1,13 @@
 const mineflayer = require('mineflayer');
+const autofish = require('mineflayer-autofish');
+// SỬA LỖI 1: Phải có "goals" trong dấu ngoặc nhọn ở đây
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder'); 
 const { pvp } = require('mineflayer-pvp');
 const express = require('express');
 
-// Web Server để Render không kill bot
+// Web Server để Render không tắt bot
 const app = express();
-app.get('/', (req, res) => res.send('Bot Archer + Trash System đang chạy!'));
+app.get('/', (req, res) => res.send('Bot đã fix lỗi và đang chạy!'));
 app.listen(process.env.PORT || 3000);
 
 let bot;
@@ -16,10 +18,12 @@ function createBot() {
         port: parseInt(process.env.MC_PORT) || 25565,
         username: process.env.MC_USER || 'ArcherBot',
         version: process.env.MC_VER || '1.20.1',
-        hideErrors: true // Ẩn lỗi packet để tránh tràn log
+        hideErrors: true // SỬA LỖI 3: Ẩn các gói tin lỗi (partial packet)
     });
 
+    // SỬA LỖI 2: Đảm bảo các plugin được nạp đúng định dạng function
     bot.loadPlugin(pathfinder);
+    bot.loadPlugin(autofish);
     bot.loadPlugin(pvp);
 
     bot.once('spawn', () => {
@@ -33,57 +37,43 @@ function createBot() {
         if (username === bot.username) return;
         const msg = message.toLowerCase();
 
-        // 1. Lệnh vứt hết đồ
+        // --- LỆNH VỨT HẾT ĐỒ ---
         if (msg === 'throw') {
             const items = bot.inventory.items();
-            if (items.length === 0) {
-                bot.chat('Túi đồ của mình đang trống không!');
-                return;
-            }
-            bot.chat('Đang dọn dẹp túi đồ, chờ tí...');
+            if (items.length === 0) return bot.chat('Túi đồ trống không!');
+            bot.chat('Đang vứt hết đồ...');
             for (const item of items) {
                 try {
                     await bot.tossStack(item);
-                } catch (err) {
-                    continue; // Bỏ qua nếu món đồ bị kẹt
-                }
+                } catch (e) {}
             }
-            bot.chat('Đã vứt sạch đồ rồi!');
+            bot.chat('Đã vứt xong!');
         }
 
-        // 2. Lệnh đi theo (Fix lỗi goals is not defined)
+        // --- LỆNH ĐI THEO (Đã fix lỗi goals) ---
         if (msg === 'come') {
             const player = bot.players[username]?.entity;
             if (player) {
                 bot.pathfinder.setGoal(new goals.GoalFollow(player, 1));
             } else {
-                bot.chat('Không thấy bạn đâu cả!');
-            }
-        }
-
-        // 3. Lệnh bắn cung
-        if (msg === 'bắn') {
-            const mob = bot.nearestEntity((e) => e.type === 'mob' && e.kind === 'Hostile monsters');
-            const bow = bot.inventory.items().find(i => i.name.includes('bow'));
-            if (mob && bow) {
-                await bot.equip(bow, 'hand');
-                bot.pvp.shootArrow(mob);
+                bot.chat('Không thấy bạn!');
             }
         }
     });
 
-    // --- CƠ CHẾ TỰ JOIN LẠI (RECONNECT) ---
+    // --- CƠ CHẾ TỰ JOIN LẠI (SỬA LỖI BOT KHÔNG TỰ RECONNECT) ---
     bot.on('error', (err) => {
         console.log(`⚠️ Lỗi: ${err.message}`);
-        // Thoát để Render tự khởi động lại (Sửa lỗi Exited with status 1)
+        // Khi gặp lỗi nghiêm trọng, thoát để Render tự khởi động lại toàn bộ
         if (err.code === 'ERR_ASSERTION' || err.message.includes('goals')) {
             process.exit(1); 
         }
     });
 
     bot.on('end', (reason) => {
-        console.log(`❌ Mất kết nối (${reason}). Khởi động lại sau 10s...`);
-        setTimeout(() => process.exit(1), 10000);
+        console.log(`❌ Mất kết nối: ${reason}. Đang khởi động lại...`);
+        // Thoát với mã 1 để Render tự động bật lại bot ngay lập tức
+        setTimeout(() => process.exit(1), 5000);
     });
 }
 
