@@ -11,7 +11,7 @@ const bot = mineflayer.createBot({
     host: process.env.MC_HOST,
     port: parseInt(process.env.MC_PORT) || 25565,
     username: process.env.MC_USER || 'ArcherBot',
-    version: process.env.MC_VER || '1.20.1',
+    version: process.env.MC_VER || '1.21.11',
     hideErrors: true // Fix lỗi partial packet trong log
 });
 
