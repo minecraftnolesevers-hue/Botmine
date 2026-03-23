@@ -33,9 +33,18 @@ bot.on('chat', (username, message) => {
     }
 });
 
-// Chống sập khi gặp lỗi vặt
 bot.on('error', (err) => {
-    if (err.code === 'ERR_ASSERTION') {
-        console.log('⚠️ Đã chặn lỗi Assertion để bot không sập.');
+    console.log(`⚠️ Lỗi hệ thống: ${err.message}`);
+    // Nếu gặp lỗi Assertion hoặc mất kết nối, thoát để Render tự bật lại
+    if (err.code === 'ERR_ASSERTION' || err.code === 'ECONNRESET') {
+        console.log('🔄 Đang khởi động lại tiến trình...');
+        process.exit(1); 
     }
+});
+
+bot.on('end', (reason) => {
+    console.log(`❌ Bot mất kết nối do: ${reason}`);
+    console.log('🚀 Sẽ tự động join lại sau vài giây...');
+    // Thoát với mã 1 để Render kích hoạt lại bot ngay lập tức
+    process.exit(1); 
 });
