@@ -1,6 +1,4 @@
 const mineflayer = require('mineflayer');
-const autofish = require('mineflayer-autofish');
-// SỬA LỖI 1: Phải có "goals" trong dấu ngoặc nhọn ở đây
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder'); 
 const { pvp } = require('mineflayer-pvp');
 const express = require('express');
@@ -23,7 +21,6 @@ function createBot() {
 
     // SỬA LỖI 2: Đảm bảo các plugin được nạp đúng định dạng function
     bot.loadPlugin(pathfinder);
-    bot.loadPlugin(autofish);
     bot.loadPlugin(pvp);
 
     bot.once('spawn', () => {
@@ -51,7 +48,7 @@ function createBot() {
         }
 
         // --- LỆNH ĐI THEO (Đã fix lỗi goals) ---
-        if (msg === 'come') {
+        if (msg === 'come1') {
             const player = bot.players[username]?.entity;
             if (player) {
                 bot.pathfinder.setGoal(new goals.GoalFollow(player, 1));
