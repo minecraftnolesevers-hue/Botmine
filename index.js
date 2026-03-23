@@ -1,77 +1,65 @@
 const mineflayer = require('mineflayer');
-const { pathfinder, Movements, goals } = require('mineflayer-pathfinder'); 
-const { pvp } = require('mineflayer-pvp');
+const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const express = require('express');
 
-// Web Server để Render không tắt bot
+// --- CẤU HÌNH WEB SERVER ĐỂ TREO TRÊN RENDER ---
 const app = express();
-app.get('/', (req, res) => res.send('Bot đã fix lỗi và đang chạy!'));
-app.listen(process.env.PORT || 3000);
+const port = process.env.PORT || 3000;
 
-let bot;
+app.get('/', (req, res) => {
+  res.send('Bot Minecraft đang chạy!');
+});
 
-function createBot() {
-    bot = mineflayer.createBot({
-        host: process.env.MC_HOST,
-        port: parseInt(process.env.MC_PORT) || 25565,
-        username: process.env.MC_USER || 'ArcherBot',
-        version: process.env.MC_VER || '1.20.1',
-        hideErrors: true // SỬA LỖI 3: Ẩn các gói tin lỗi (partial packet)
-    });
+app.listen(port, () => {
+  console.log(`Web server listening at http://localhost:${port}`);
+});
 
-    // SỬA LỖI 2: Đảm bảo các plugin được nạp đúng định dạng function
-    bot.loadPlugin(pathfinder);
-    bot.loadPlugin(pvp);
+// --- CẤU HÌNH BOT MINECRAFT ---
+const bot = mineflayer.createBot({
+  host: 'your-wilt.gl.joinmc.link', 
+  port: 28191,
+  username: 'RenderBot_V1',
+  version: '1.21.11'
+});
 
-    bot.once('spawn', () => {
-        console.log('✅ Bot đã vào game thành công!');
-        const mcData = require('minecraft-data')(bot.version);
-        const movements = new Movements(bot, mcData);
-        bot.pathfinder.setMovements(movements);
-    });
+bot.loadPlugin(pathfinder);
 
-    bot.on('chat', async (username, message) => {
-        if (username === bot.username) return;
-        const msg = message.toLowerCase();
+bot.on('spawn', () => {
+  const mcData = require('minecraft-data')(bot.version);
+  const movements = new Movements(bot, mcData);
+  bot.pathfinder.setMovements(movements);
+  console.log('Bot đã sẵn sàng!');
+});
 
-        // --- LỆNH VỨT HẾT ĐỒ ---
-        if (msg === 'throw') {
-            const items = bot.inventory.items();
-            if (items.length === 0) return bot.chat('Túi đồ trống không!');
-            bot.chat('Đang vứt hết đồ...');
-            for (const item of items) {
-                try {
-                    await bot.tossStack(item);
-                } catch (e) {}
-            }
-            bot.chat('Đã vứt xong!');
-        }
+// Các lệnh chat (come1, attack, drop) giữ nguyên như cũ...
+bot.on('chat', async (username, message) => {
+  if (username === bot.username) return;
+  const target = bot.players[username]?.entity;
 
-        // --- LỆNH ĐI THEO (Đã fix lỗi goals) ---
-        if (msg === 'come1') {
-            const player = bot.players[username]?.entity;
-            if (player) {
-                bot.pathfinder.setGoal(new goals.GoalFollow(player, 1));
-            } else {
-                bot.chat('Không thấy bạn!');
-            }
-        }
-    });
+  if (message === 'come1' && target) {
+    bot.pathfinder.setGoal(new goals.GoalFollow(target, 1), true);
+  }
 
-    // --- CƠ CHẾ TỰ JOIN LẠI (SỬA LỖI BOT KHÔNG TỰ RECONNECT) ---
-    bot.on('error', (err) => {
-        console.log(`⚠️ Lỗi: ${err.message}`);
-        // Khi gặp lỗi nghiêm trọng, thoát để Render tự khởi động lại toàn bộ
-        if (err.code === 'ERR_ASSERTION' || err.message.includes('goals')) {
-            process.exit(1); 
-        }
-    });
+  if (message === 'drop') {
+    const items = bot.inventory.items();
+    for (const item of items) await bot.tossStack(item);
+    bot.chat("Đã vứt sạch đồ!");
+  }
+  
+  // Lệnh tấn công (Yêu cầu có cung và tên)
+  if (message === 'attack') {
+    const mob = bot.nearestEntity((e) => e.type === 'mob' && e.kind === 'Hostile monsters');
+    if (mob) {
+      const bow = bot.inventory.items().find(i => i.name.includes('bow'));
+      if (bow) {
+        await bot.equip(bow, 'hand');
+        bot.lookAt(mob.position.offset(0, 1.6, 0));
+        bot.activateItem();
+        setTimeout(() => bot.deactivateItem(), 1200);
+      }
+    }
+  }
+});
 
-    bot.on('end', (reason) => {
-        console.log(`❌ Mất kết nối: ${reason}. Đang khởi động lại...`);
-        // Thoát với mã 1 để Render tự động bật lại bot ngay lập tức
-        setTimeout(() => process.exit(1), 5000);
-    });
-}
-
-createBot();
+// Tự động kết nối lại nếu bị kick
+bot.on('end', () => setTimeout(() => process.exit(), 5000));
