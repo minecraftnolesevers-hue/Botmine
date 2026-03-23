@@ -19,7 +19,7 @@ const bot = mineflayer.createBot({
   host: 'your-wilt.gl.joinmc.link', 
   port: 28191,
   username: 'RenderBot_V1',
-  version: '1.21.4'
+  version: '1.21.11'
 });
 
 bot.loadPlugin(pathfinder);
