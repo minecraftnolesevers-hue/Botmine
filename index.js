@@ -18,7 +18,7 @@ app.listen(port, () => {
 const bot = mineflayer.createBot({
   host: 'your-wilt.gl.joinmc.link', 
   port: 28191,
-  username: 'RenderBot_V1',
+  username: 'RenderBot',
   version: '1.21.11'
 });
 
