@@ -1,18 +1,18 @@
 {
-  "name": "minecraft-archer-bot",
+  "name": "minecraft-bot-archer",
   "version": "1.0.0",
-  "description": "Bot Minecraft có khả năng đi theo và bắn cung tự động",
-  "main": "bot_archer.js",
+  "description": "Bot Minecraft có tính năng bắn cung, đi theo và vứt đồ",
+  "main": "index.js",
   "scripts": {
-    "start": "node bot_archer.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "mineflayer": "^4.20.0",
     "mineflayer-pathfinder": "^2.4.0",
     "mineflayer-pvp": "^1.2.0",
+    "mineflayer-autofish": "^1.5.0",
     "minecraft-data": "^3.57.0",
-    "express": "^4.18.2",
-    "discord.js": "^14.14.1"
+    "express": "^4.18.2"
   },
   "engines": {
     "node": ">=18.0.0"
